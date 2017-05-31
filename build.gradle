@@ -1,0 +1,111 @@
+plugins {
+    id 'com.jfrog.bintray' version '1.7.3'
+}
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+apply plugin: 'java-library-distribution'
+
+ext {
+    productVersion    = '0.8.3'
+    product           = 'embedded-consul'
+    javaTarget        = JavaVersion.VERSION_1_8
+    libraries         = [
+        flapdoodleProcess:  'de.flapdoodle.embed:de.flapdoodle.embed.process:2.0.1',
+        junit:              'junit:junit:4.12'
+    ]
+}
+
+idea {
+    project {
+        jdkName = javaTarget
+        languageLevel = javaTarget
+        vcs = 'Git'
+    }
+    module {
+        name = product
+    }
+}
+
+version = productVersion
+sourceCompatibility = javaTarget
+targetCompatibility = javaTarget
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile(libraries.flapdoodleProcess)
+    testCompile(libraries.junit)
+}
+
+task sourcesJar(type: Jar, dependsOn: compileJava) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name 'BSD 3-Clause'
+            url 'http://www.opensource.org/licenses/bsd-license.php'
+            distribution 'repo'
+        }
+    }
+    developers {
+        developer {
+            id 'golovnin'
+            name 'Andrej Golovnin'
+            email 'andrej.golovnin@gmail.com'
+        }
+    }
+    scm {
+        url 'https://github.com/golovnin/embedded-consul'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId 'com.github.golovnin'
+            artifactId product
+            version productVersion
+
+            from components.java
+            artifact sourcesJar {
+                classifier 'sources'
+            }
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', 'Embedded Consul based on https://github.com/flapdoodle-oss/de.flapdoodle.embed.process')
+                root.appendNode('name', 'Embedded Consul')
+                root.appendNode('url', 'https://github.com/golovnin/embedded-consul')
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+    publications = ['mavenJava']
+    pkg {
+        repo = 'maven'
+        name = product
+        userOrg = System.getenv('BINTRAY_USER')
+        licenses = ['BSD 3-Clause']
+        vcsUrl = 'https://github.com/golovnin/embedded-consul'
+        labels = ['embedded', 'consul']
+        version {
+            name = productVersion
+            vcsTag = productVersion
+            released = "2017-05-31'T'22:00:00.000ZZ"
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.5'
+}
