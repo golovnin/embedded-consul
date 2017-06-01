@@ -43,6 +43,7 @@ import de.flapdoodle.embed.process.extract.IExtractedFileSet;
 import de.flapdoodle.embed.process.io.LogWatchStreamProcessor;
 import de.flapdoodle.embed.process.io.Processors;
 import de.flapdoodle.embed.process.io.StreamToLineProcessor;
+import de.flapdoodle.embed.process.io.file.Files;
 import de.flapdoodle.embed.process.runtime.AbstractProcess;
 import de.flapdoodle.embed.process.runtime.ProcessControl;
 
@@ -70,7 +71,7 @@ public final class ConsulAgentProcess
 
     @Override
     protected List<String> getCommandLine(Distribution distribution,
-        ConsulAgentConfig config, IExtractedFileSet exe) throws IOException
+        ConsulAgentConfig config, IExtractedFileSet files) throws IOException
     {
         String advertise = config.getAdvertise();
         String bind = config.getBind();
@@ -78,7 +79,7 @@ public final class ConsulAgentProcess
         String httpPort = String.valueOf(config.getHttpPort());
         String logLevel = config.getLogLevel().toConsulValue();
         return Arrays.asList(
-            "consul",
+            Files.fileOf(files.baseDir(), files.executable()).getAbsolutePath(),
             "agent",
             "-dev",
             "-advertise=" + advertise,
