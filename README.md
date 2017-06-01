@@ -10,7 +10,7 @@ Add the following dependency to your pom.xml:
 <dependency>
     <groupId>com.github.golovnin</groupId>
     <artifactId>embedded-consul</artifactId>
-    <version>0.8.3</version>
+    <version>0.8.3.1</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Add the following dependency to your pom.xml:
 
 Add a line to build.gradle:
 ```groovy
-testCompile 'com.github.golovnin:embedded-consul:0.8.3'
+testCompile 'com.github.golovnin:embedded-consul:0.8.3.1'
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ ConsulAgentExecutable executable = starter.prepare(
 process.stop();
 ```
 
-### Supported versions and platforms
+### Supported Consul versions and platforms
 
 Versions: 0.8.3 and any custom
 
