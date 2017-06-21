@@ -30,7 +30,10 @@
 
 package com.github.golovnin.embedded.consul;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,32 +64,50 @@ public final class ConsulAgentProcess
         Collections.singleton("Error starting agent");
 
 
+    private File configFile;
+
+
     ConsulAgentProcess(Distribution distribution, ConsulAgentConfig config,
         IRuntimeConfig runtimeConfig, ConsulAgentExecutable executable)
         throws IOException
     {
         super(distribution, config, runtimeConfig, executable);
-
     }
 
     @Override
     protected List<String> getCommandLine(Distribution distribution,
         ConsulAgentConfig config, IExtractedFileSet files) throws IOException
     {
+        configFile = File.createTempFile("embedded-consul-config", ".json");
+        try (
+            OutputStreamWriter writer = new OutputStreamWriter(
+                new FileOutputStream(configFile), "UTF-8")
+        ) {
+            writer.write(config.toJson());
+        }
         String advertise = config.getAdvertise();
         String bind = config.getBind();
+        String client = config.getClient();
+        String datacenter = config.getDatacenter();
         String dnsPort = String.valueOf(config.getDnsPort());
         String httpPort = String.valueOf(config.getHttpPort());
         String logLevel = config.getLogLevel().toConsulValue();
+        String node = config.getNode();
+        String nodeID = config.getNodeID();
         return Arrays.asList(
             Files.fileOf(files.baseDir(), files.executable()).getAbsolutePath(),
             "agent",
             "-dev",
             "-advertise=" + advertise,
             "-bind=" + bind,
+            "-client=" + client,
+            "-config-file=" + configFile.getAbsolutePath(),
+            "-datacenter=" + datacenter,
             "-dns-port=" + dnsPort,
             "-http-port=" + httpPort,
-            "-log-level=" + logLevel);
+            "-log-level=" + logLevel,
+            "-node=" + node,
+            "-node-id=" + nodeID);
     }
 
     @Override
@@ -130,7 +151,7 @@ public final class ConsulAgentProcess
 
     @Override
     protected void cleanupInternal() {
-        // NOP
+        Files.forceDelete(configFile);
     }
 
 }

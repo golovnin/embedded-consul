@@ -35,7 +35,13 @@ import de.flapdoodle.embed.process.config.ISupportConfig;
 /**
  * @author Andrej Golovnin
  */
-public final class ConsulSupportConfig implements ISupportConfig {
+final class ConsulSupportConfig implements ISupportConfig {
+
+    static final ISupportConfig INSTANCE = new ConsulSupportConfig();
+
+    private ConsulSupportConfig() {
+        // NOP
+    }
 
     @Override
     public String getName() {

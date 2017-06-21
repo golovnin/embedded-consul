@@ -32,10 +32,11 @@ package com.github.golovnin.embedded.consul;
 
 import java.io.IOException;
 
-import org.junit.Assert;
+import de.flapdoodle.embed.process.distribution.IVersion;
 import org.junit.Test;
 
-import de.flapdoodle.embed.process.distribution.IVersion;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Andrej Golovnin
@@ -44,12 +45,34 @@ public class ConsulAgentStarterTest {
 
     @Test
     public void testDefault() throws IOException {
+        ConsulAgentConfig config = new ConsulAgentConfig.Builder()
+            .build();
         ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
-        ConsulAgentExecutable executable = starter.prepare(
-            new ConsulAgentConfig.Builder().build());
+        ConsulAgentExecutable executable = starter.prepare(config);
         try {
             ConsulAgentProcess process = executable.start();
-            Assert.assertTrue(process.isProcessRunning());
+            assertTrue(process.isProcessRunning());
+            process.stop();
+        } finally {
+            executable.stop();
+        }
+    }
+
+    @Test
+    public void testDefaultWithRandomPorts() throws IOException {
+        ConsulAgentConfig config = new ConsulAgentConfig.Builder()
+            .randomPorts()
+            .build();
+        assertNotEquals(8500, config.getHttpPort());
+        assertNotEquals(8600, config.getDnsPort());
+        assertNotEquals(8301, config.getSerfLANPort());
+        assertNotEquals(8302, config.getSerfWANPort());
+        assertNotEquals(8300, config.getServerPort());
+        ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
+        ConsulAgentExecutable executable = starter.prepare(config);
+        try {
+            ConsulAgentProcess process = executable.start();
+            assertTrue(process.isProcessRunning());
             process.stop();
         } finally {
             executable.stop();
@@ -59,14 +82,14 @@ public class ConsulAgentStarterTest {
     @Test
     public void testCustomVersion() throws IOException {
         IVersion v0_7_5 = () -> "0.7.5";
+        ConsulAgentConfig config = new ConsulAgentConfig.Builder()
+            .version(v0_7_5)
+            .build();
         ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
-        ConsulAgentExecutable executable = starter.prepare(
-            new ConsulAgentConfig.Builder()
-                .version(v0_7_5)
-                .build());
+        ConsulAgentExecutable executable = starter.prepare(config);
         try {
             ConsulAgentProcess process = executable.start();
-            Assert.assertTrue(process.isProcessRunning());
+            assertTrue(process.isProcessRunning());
             process.stop();
         } finally {
             executable.stop();
