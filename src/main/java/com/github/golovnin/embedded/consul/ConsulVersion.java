@@ -37,7 +37,10 @@ import de.flapdoodle.embed.process.distribution.IVersion;
  */
 public enum ConsulVersion implements IVersion {
 
-    V0_8_3("0.8.3");
+    @Deprecated
+    V0_8_3("0.8.3"),
+
+    V0_8_4("0.8.4");
 
     private final String version;
 

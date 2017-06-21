@@ -30,13 +30,19 @@
 
 package com.github.golovnin.embedded.consul;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import de.flapdoodle.embed.process.builder.AbstractBuilder;
 import de.flapdoodle.embed.process.builder.TypedProperty;
 import de.flapdoodle.embed.process.config.IExecutableProcessConfig;
 import de.flapdoodle.embed.process.config.ISupportConfig;
 import de.flapdoodle.embed.process.distribution.IVersion;
-
-import java.util.concurrent.TimeUnit;
+import de.flapdoodle.embed.process.runtime.Network;
 
 /**
  * @author Andrej Golovnin
@@ -47,24 +53,41 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
     private final long startupTimeout;
     private final String advertise;
     private final String bind;
+    private final String client;
+    private final String datacenter;
     private final int dnsPort;
     private final int httpPort;
+    private final int serfLANPort;
+    private final int serfWANPort;
+    private final int serverPort;
     private final ConsulLogLevel logLevel;
+    private final String node;
+    private final String nodeID;
 
     ConsulAgentConfig(IVersion version, long startupTimeout,
-        String advertise, String bind, int dnsPort, int httpPort,
-        ConsulLogLevel logLevel)
+        String advertise, String bind, String client, String datacenter,
+        int dnsPort, int httpPort, int serfLANPort, int serfWANPort,
+        int serverPort, ConsulLogLevel logLevel, String node, String nodeID)
     {
         this.version = version;
         this.startupTimeout = startupTimeout;
         this.advertise = advertise;
         this.bind = bind;
+        this.client = client;
+        this.datacenter = datacenter;
         this.dnsPort = dnsPort;
         this.httpPort = httpPort;
+        this.serfLANPort = serfLANPort;
+        this.serfWANPort = serfWANPort;
+        this.serverPort = serverPort;
         this.logLevel = logLevel;
+        this.node = node;
+        this.nodeID = nodeID;
     }
 
     public static final class Builder extends AbstractBuilder<ConsulAgentConfig> {
+
+        private static final String DEFAULT_ADDRESS = "127.0.0.1";
 
         private static final TypedProperty<IVersion> VERSION =
             TypedProperty.with("version", IVersion.class);
@@ -78,23 +101,57 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         private static final TypedProperty<String> BIND =
             TypedProperty.with("bind", String.class);
 
+        private static final TypedProperty<String> CLIENT =
+            TypedProperty.with("client", String.class);
+
+        private static final TypedProperty<String> DATACENTER =
+            TypedProperty.with("datacenter", String.class);
+
         private static final TypedProperty<Integer> DNS_PORT =
             TypedProperty.with("dns-port", Integer.class);
 
         private static final TypedProperty<Integer> HTTP_PORT =
             TypedProperty.with("http-port", Integer.class);
 
+        private static final TypedProperty<Integer> SERF_LAN_PORT =
+            TypedProperty.with("serf-lan-port", Integer.class);
+
+        private static final TypedProperty<Integer> SERF_WAN_PORT =
+            TypedProperty.with("serf-wan-port", Integer.class);
+
+        private static final TypedProperty<Integer> SERVER_PORT =
+            TypedProperty.with("server-port", Integer.class);
+
         private static final TypedProperty<ConsulLogLevel> LOG_LEVEL =
             TypedProperty.with("log-level", ConsulLogLevel.class);
 
+        private static final TypedProperty<String> NODE =
+            TypedProperty.with("node", String.class);
+
+        private static final TypedProperty<String> NODE_ID =
+            TypedProperty.with("node-id", String.class);
+
         public Builder() {
-            property(VERSION).setDefault(ConsulVersion.V0_8_3);
+            property(VERSION).setDefault(ConsulVersion.V0_8_4);
             property(STARTUP_TIMEOUT).setDefault(60000L);
-            property(ADVERTISE).setDefault("127.0.0.1");
-            property(BIND).setDefault("127.0.0.1");
+            property(ADVERTISE).setDefault(DEFAULT_ADDRESS);
+            property(BIND).setDefault(DEFAULT_ADDRESS);
+            property(CLIENT).setDefault(DEFAULT_ADDRESS);
+            property(DATACENTER).setDefault("dc1");
             property(DNS_PORT).setDefault(8600);
             property(HTTP_PORT).setDefault(8500);
+            property(SERF_LAN_PORT).setDefault(8301);
+            property(SERF_WAN_PORT).setDefault(8302);
+            property(SERVER_PORT).setDefault(8300);
             property(LOG_LEVEL).setDefault(ConsulLogLevel.INFO);
+            String node = "localhost";
+            try {
+                node = InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                // Ignore
+            }
+            property(NODE).setDefault(node);
+            property(NODE_ID).setDefault(UUID.randomUUID().toString());
         }
 
         public Builder version(IVersion version) {
@@ -117,6 +174,16 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             return this;
         }
 
+        public Builder client(String address) {
+            property(CLIENT).set(address);
+            return this;
+        }
+
+        public Builder datacenter(String datacenter) {
+            property(DATACENTER).set(datacenter);
+            return this;
+        }
+
         public Builder dnsPort(int port) {
             property(DNS_PORT).set(port);
             return this;
@@ -127,8 +194,54 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             return this;
         }
 
+        public Builder serfLANPort(int port) {
+            property(SERF_LAN_PORT).set(port);
+            return this;
+        }
+
+        public Builder serfWANPort(int port) {
+            property(SERF_WAN_PORT).set(port);
+            return this;
+        }
+
+        public Builder serverPort(int port) {
+            property(SERVER_PORT).set(port);
+            return this;
+        }
+
+        public Builder randomPorts() {
+            return randomPorts(DEFAULT_ADDRESS);
+        }
+
+        public Builder randomPorts(String address) {
+            try {
+                int[] ports = Network.getFreeServerPorts(
+                    InetAddress.getByName(address), 5);
+                advertise(address);
+                bind(address);
+                httpPort(ports[0]);
+                dnsPort(ports[1]);
+                serfLANPort(ports[2]);
+                serfWANPort(ports[3]);
+                serverPort(ports[4]);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return this;
+        }
+
         public Builder logLevel(ConsulLogLevel level) {
             property(LOG_LEVEL).set(level);
+            return this;
+        }
+
+        public Builder node(String node) {
+            property(NODE).set(node);
+            return this;
+        }
+
+        public Builder nodeID(String nodeID) {
+            property(NODE_ID).set(nodeID);
             return this;
         }
 
@@ -139,9 +252,16 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
                 property(STARTUP_TIMEOUT).get(),
                 property(ADVERTISE).get(),
                 property(BIND).get(),
+                property(CLIENT).get(),
+                property(DATACENTER).get(),
                 property(DNS_PORT).get(),
                 property(HTTP_PORT).get(),
-                property(LOG_LEVEL).get());
+                property(SERF_LAN_PORT).get(),
+                property(SERF_WAN_PORT).get(),
+                property(SERVER_PORT).get(),
+                property(LOG_LEVEL).get(),
+                property(NODE).get(),
+                property(NODE_ID).get());
         }
 
     }
@@ -158,6 +278,14 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         return bind;
     }
 
+    public String getClient() {
+        return client;
+    }
+
+    public String getDatacenter() {
+        return datacenter;
+    }
+
     public int getDnsPort() {
         return dnsPort;
     }
@@ -166,8 +294,28 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         return httpPort;
     }
 
+    public int getSerfLANPort() {
+        return serfLANPort;
+    }
+
+    public int getSerfWANPort() {
+        return serfWANPort;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+
     public ConsulLogLevel getLogLevel() {
         return logLevel;
+    }
+
+    public String getNode() {
+        return node;
+    }
+
+    public String getNodeID() {
+        return nodeID;
     }
 
     @Override
@@ -177,7 +325,20 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
 
     @Override
     public ISupportConfig supportConfig() {
-        return new ConsulSupportConfig();
+        return ConsulSupportConfig.INSTANCE;
+    }
+
+    String toJson() {
+        return new StringBuilder()
+            .append("{\n")
+            .append("\t\"ports\": {\n")
+            .append("\t\t\"serf_lan\": ").append(getSerfLANPort()).append(",\n")
+            .append("\t\t\"serf_wan\": ").append(getSerfWANPort()).append(",\n")
+            .append("\t\t\"server\": ").append(getServerPort()).append("\n")
+            .append("\t},\n")
+            .append("\t\"disable_update_check\": true\n")
+            .append("}\n")
+            .toString();
     }
 
 }

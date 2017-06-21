@@ -7,7 +7,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'java-library-distribution'
 
 ext {
-    productVersion    = '0.8.3.1'
+    productVersion    = '0.8.4.0'
     product           = 'embedded-consul'
     javaTarget        = JavaVersion.VERSION_1_8
     libraries         = [
@@ -31,6 +31,11 @@ version = productVersion
 sourceCompatibility = javaTarget
 targetCompatibility = javaTarget
 
+// Change the output directory for the main source set back to the old path.
+// Remove it when IDEA and Eclipse support new layout.
+sourceSets.main.output.classesDir = new File(buildDir, "classes/main")
+sourceSets.test.output.classesDir = new File(buildDir, "classes/test")
+
 repositories {
     mavenCentral()
 }
@@ -43,6 +48,11 @@ dependencies {
 task sourcesJar(type: Jar, dependsOn: compileJava) {
     from sourceSets.main.allSource
     classifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
 }
 
 def pomConfig = {
@@ -76,6 +86,9 @@ publishing {
             artifact sourcesJar {
                 classifier 'sources'
             }
+            artifact javadocJar {
+                classifier 'javadoc'
+            }
             pom.withXml {
                 def root = asNode()
                 root.appendNode('description', 'Embedded Consul based on https://github.com/flapdoodle-oss/de.flapdoodle.embed.process')
@@ -101,11 +114,11 @@ bintray {
         version {
             name = productVersion
             vcsTag = productVersion
-            released = "2017-05-31'T'22:00:00.000ZZ"
+            released = new java.util.Date()
         }
     }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.5'
+    gradleVersion = '4.0'
 }
