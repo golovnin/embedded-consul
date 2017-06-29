@@ -31,9 +31,15 @@
 package com.github.golovnin.embedded.consul;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import de.flapdoodle.embed.process.distribution.IVersion;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -41,11 +47,21 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Andrej Golovnin
  */
+@RunWith(Parameterized.class)
 public class ConsulAgentStarterTest {
+
+    @Parameters
+    public static List<ConsulLogLevel> logLevels() {
+        return Arrays.asList(ConsulLogLevel.values());
+    }
+
+    @Parameter
+    public ConsulLogLevel logLevel;
 
     @Test
     public void testDefault() throws IOException {
         ConsulAgentConfig config = new ConsulAgentConfig.Builder()
+            .logLevel(logLevel)
             .build();
         ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
         ConsulAgentExecutable executable = starter.prepare(config);
@@ -62,6 +78,7 @@ public class ConsulAgentStarterTest {
     public void testDefaultWithRandomPorts() throws IOException {
         ConsulAgentConfig config = new ConsulAgentConfig.Builder()
             .randomPorts()
+            .logLevel(logLevel)
             .build();
         assertNotEquals(8500, config.getHttpPort());
         assertNotEquals(8600, config.getDnsPort());
@@ -84,6 +101,7 @@ public class ConsulAgentStarterTest {
         IVersion v0_7_5 = () -> "0.7.5";
         ConsulAgentConfig config = new ConsulAgentConfig.Builder()
             .version(v0_7_5)
+            .logLevel(logLevel)
             .build();
         ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
         ConsulAgentExecutable executable = starter.prepare(config);

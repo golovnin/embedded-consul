@@ -58,7 +58,7 @@ public final class ConsulAgentProcess
 {
 
     private static final String SUCCESS_MESSAGE =
-        "agent: Synced service 'consul'";
+        "Consul agent running!";
 
     private static final Set<String> KNOWN_FAILURE_MESSAGES =
         Collections.singleton("Error starting agent");

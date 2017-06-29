@@ -40,7 +40,10 @@ public enum ConsulVersion implements IVersion {
     @Deprecated
     V0_8_3("0.8.3"),
 
-    V0_8_4("0.8.4");
+    @Deprecated
+    V0_8_4("0.8.4"),
+
+    V0_8_5("0.8.5");
 
     private final String version;
 
