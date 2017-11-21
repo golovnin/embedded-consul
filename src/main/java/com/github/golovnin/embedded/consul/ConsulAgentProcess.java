@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -88,26 +88,35 @@ public final class ConsulAgentProcess
         String advertise = config.getAdvertise();
         String bind = config.getBind();
         String client = config.getClient();
+        String configDir = config.getConfigDir();
         String datacenter = config.getDatacenter();
         String dnsPort = String.valueOf(config.getDnsPort());
         String httpPort = String.valueOf(config.getHttpPort());
         String logLevel = config.getLogLevel().toConsulValue();
         String node = config.getNode();
         String nodeID = config.getNodeID();
-        return Arrays.asList(
-            Files.fileOf(files.baseDir(), files.executable()).getAbsolutePath(),
-            "agent",
-            "-dev",
-            "-advertise=" + advertise,
-            "-bind=" + bind,
-            "-client=" + client,
-            "-config-file=" + configFile.getAbsolutePath(),
-            "-datacenter=" + datacenter,
-            "-dns-port=" + dnsPort,
-            "-http-port=" + httpPort,
-            "-log-level=" + logLevel,
-            "-node=" + node,
-            "-node-id=" + nodeID);
+
+        List<String> commandLine = new ArrayList<>();
+        commandLine.add(Files.fileOf(files.baseDir(), files.executable()).getAbsolutePath());
+        commandLine.add("agent");
+        commandLine.add("-dev");
+        commandLine.add("-advertise=" + advertise);
+        commandLine.add("-bind=" + bind);
+        commandLine.add("-client=" + client);
+        commandLine.add("-config-file=" + configFile.getAbsolutePath());
+
+        if (configDir != null && configDir.length() > 0) {
+            commandLine.add("-config-dir=" + configDir);
+        }
+
+        commandLine.add("-datacenter=" + datacenter);
+        commandLine.add("-dns-port=" + dnsPort);
+        commandLine.add("-http-port=" + httpPort);
+        commandLine.add("-log-level=" + logLevel);
+        commandLine.add("-node=" + node);
+        commandLine.add("-node-id=" + nodeID);
+
+        return commandLine;
     }
 
     @Override

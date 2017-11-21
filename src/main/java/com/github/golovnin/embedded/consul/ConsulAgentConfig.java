@@ -54,6 +54,7 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
     private final String advertise;
     private final String bind;
     private final String client;
+    private final String configDir;
     private final String datacenter;
     private final int dnsPort;
     private final int httpPort;
@@ -65,15 +66,17 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
     private final String nodeID;
 
     ConsulAgentConfig(IVersion version, long startupTimeout,
-        String advertise, String bind, String client, String datacenter,
-        int dnsPort, int httpPort, int serfLANPort, int serfWANPort,
-        int serverPort, ConsulLogLevel logLevel, String node, String nodeID)
-    {
+        String advertise, String bind, String client, String configDir,
+        String datacenter, int dnsPort, int httpPort, int serfLANPort,
+        int serfWANPort, int serverPort, ConsulLogLevel logLevel, String node,
+        String nodeID
+    ) {
         this.version = version;
         this.startupTimeout = startupTimeout;
         this.advertise = advertise;
         this.bind = bind;
         this.client = client;
+        this.configDir = configDir;
         this.datacenter = datacenter;
         this.dnsPort = dnsPort;
         this.httpPort = httpPort;
@@ -104,6 +107,9 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         private static final TypedProperty<String> CLIENT =
             TypedProperty.with("client", String.class);
 
+        private static final TypedProperty<String> CONFIG_DIR =
+            TypedProperty.with("config-dir", String.class);
+
         private static final TypedProperty<String> DATACENTER =
             TypedProperty.with("datacenter", String.class);
 
@@ -132,11 +138,12 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             TypedProperty.with("node-id", String.class);
 
         public Builder() {
-            property(VERSION).setDefault(ConsulVersion.V0_8_5);
+            property(VERSION).setDefault(ConsulVersion.V1_0_1);
             property(STARTUP_TIMEOUT).setDefault(60000L);
             property(ADVERTISE).setDefault(DEFAULT_ADDRESS);
             property(BIND).setDefault(DEFAULT_ADDRESS);
             property(CLIENT).setDefault(DEFAULT_ADDRESS);
+            property(CONFIG_DIR).setDefault("");
             property(DATACENTER).setDefault("dc1");
             property(DNS_PORT).setDefault(8600);
             property(HTTP_PORT).setDefault(8500);
@@ -176,6 +183,11 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
 
         public Builder client(String address) {
             property(CLIENT).set(address);
+            return this;
+        }
+
+        public Builder configDir(String configDir) {
+            property(CONFIG_DIR).set(configDir);
             return this;
         }
 
@@ -253,6 +265,7 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
                 property(ADVERTISE).get(),
                 property(BIND).get(),
                 property(CLIENT).get(),
+                property(CONFIG_DIR).get(),
                 property(DATACENTER).get(),
                 property(DNS_PORT).get(),
                 property(HTTP_PORT).get(),
@@ -280,6 +293,10 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
 
     public String getClient() {
         return client;
+    }
+
+    public String getConfigDir() {
+        return configDir;
     }
 
     public String getDatacenter() {

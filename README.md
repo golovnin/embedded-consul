@@ -14,7 +14,7 @@ repositories {
 ```
 Add a Gradle compile dependency to the `build.gradle` file of your project:
 ```groovy
-testCompile 'com.github.golovnin:embedded-consul:0.8.5.0'
+testCompile 'com.github.golovnin:embedded-consul:1.0.1.0'
 ```
 
 ### Usage
@@ -48,7 +48,7 @@ process.stop();
 
 ### Supported Consul versions and platforms
 
-Versions: 0.8.5 and any custom
+Versions: 1.0.1 and any custom
 
 Platforms: Mac OS X, FreeBSD, Linux, Solaris and Windows
 
