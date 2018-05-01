@@ -138,7 +138,7 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             TypedProperty.with("node-id", String.class);
 
         public Builder() {
-            property(VERSION).setDefault(ConsulVersion.V1_0_1);
+            property(VERSION).setDefault(ConsulVersion.V1_0_7);
             property(STARTUP_TIMEOUT).setDefault(60000L);
             property(ADVERTISE).setDefault(DEFAULT_ADDRESS);
             property(BIND).setDefault(DEFAULT_ADDRESS);
