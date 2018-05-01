@@ -58,7 +58,22 @@ public enum ConsulVersion implements IVersion {
     @Deprecated
     V1_0_0("1.0.0"),
 
-    V1_0_1("1.0.1");
+    @Deprecated
+    V1_0_1("1.0.1"),
+
+    @Deprecated
+    V1_0_2("1.0.2"),
+
+    @Deprecated
+    V1_0_3("1.0.3"),
+
+    @Deprecated
+    V1_0_5("1.0.5"),
+
+    @Deprecated
+    V1_0_6("1.0.6"),
+
+    V1_0_7("1.0.7");
 
     private final String version;
 
