@@ -36,6 +36,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import de.flapdoodle.embed.process.builder.AbstractBuilder;
 import de.flapdoodle.embed.process.builder.TypedProperty;
@@ -43,6 +44,8 @@ import de.flapdoodle.embed.process.config.IExecutableProcessConfig;
 import de.flapdoodle.embed.process.config.ISupportConfig;
 import de.flapdoodle.embed.process.distribution.IVersion;
 import de.flapdoodle.embed.process.runtime.Network;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andrej Golovnin
@@ -64,12 +67,14 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
     private final ConsulLogLevel logLevel;
     private final String node;
     private final String nodeID;
+    private final Consumer<String> outConsumer;
+    private final Consumer<String> errConsumer;
 
     ConsulAgentConfig(IVersion version, long startupTimeout,
         String advertise, String bind, String client, String configDir,
         String datacenter, int dnsPort, int httpPort, int serfLANPort,
         int serfWANPort, int serverPort, ConsulLogLevel logLevel, String node,
-        String nodeID
+        String nodeID, Consumer<String> outConsumer, Consumer<String> errConsumer
     ) {
         this.version = version;
         this.startupTimeout = startupTimeout;
@@ -86,11 +91,15 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         this.logLevel = logLevel;
         this.node = node;
         this.nodeID = nodeID;
+        this.outConsumer = outConsumer;
+        this.errConsumer = errConsumer;
     }
 
     public static final class Builder extends AbstractBuilder<ConsulAgentConfig> {
 
         private static final String DEFAULT_ADDRESS = "127.0.0.1";
+
+        private static final Consumer<String> NOP_CONSUMER = s -> {};
 
         private static final TypedProperty<IVersion> VERSION =
             TypedProperty.with("version", IVersion.class);
@@ -137,8 +146,14 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         private static final TypedProperty<String> NODE_ID =
             TypedProperty.with("node-id", String.class);
 
+        private static final TypedProperty<Consumer> OUT_CONSUMER =
+            TypedProperty.with("out-consumer", Consumer.class);
+
+        private static final TypedProperty<Consumer> ERR_CONSUMER =
+            TypedProperty.with("err-consumer", Consumer.class);
+
         public Builder() {
-            property(VERSION).setDefault(ConsulVersion.V1_0_7);
+            property(VERSION).setDefault(ConsulVersion.V1_2_1);
             property(STARTUP_TIMEOUT).setDefault(60000L);
             property(ADVERTISE).setDefault(DEFAULT_ADDRESS);
             property(BIND).setDefault(DEFAULT_ADDRESS);
@@ -159,11 +174,17 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             }
             property(NODE).setDefault(node);
             property(NODE_ID).setDefault(UUID.randomUUID().toString());
+            property(OUT_CONSUMER).setDefault(NOP_CONSUMER);
+            property(ERR_CONSUMER).setDefault(NOP_CONSUMER);
         }
 
         public Builder version(IVersion version) {
             property(VERSION).set(version);
             return this;
+        }
+
+        public Builder version(String version) {
+            return version(() -> version);
         }
 
         public Builder startupTimeout(long startupTimeout, TimeUnit unit) {
@@ -257,6 +278,17 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             return this;
         }
 
+        public Builder outConsumer(Consumer<String> consumer) {
+            property(OUT_CONSUMER).set(requireNonNull(consumer));
+            return this;
+        }
+
+        public Builder errConsumer(Consumer<String> consumer) {
+            property(ERR_CONSUMER).set(requireNonNull(consumer));
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
         @Override
         public ConsulAgentConfig build() {
             return new ConsulAgentConfig(
@@ -274,7 +306,9 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
                 property(SERVER_PORT).get(),
                 property(LOG_LEVEL).get(),
                 property(NODE).get(),
-                property(NODE_ID).get());
+                property(NODE_ID).get(),
+                (Consumer<String>) property(OUT_CONSUMER).get(),
+                (Consumer<String>) property(ERR_CONSUMER).get());
         }
 
     }
@@ -335,6 +369,14 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
         return nodeID;
     }
 
+    public Consumer<String> getOutConsumer() {
+        return outConsumer;
+    }
+
+    public Consumer<String> getErrConsumer() {
+        return errConsumer;
+    }
+
     @Override
     public IVersion version() {
         return version;
@@ -346,16 +388,14 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
     }
 
     String toJson() {
-        return new StringBuilder()
-            .append("{\n")
-            .append("\t\"ports\": {\n")
-            .append("\t\t\"serf_lan\": ").append(getSerfLANPort()).append(",\n")
-            .append("\t\t\"serf_wan\": ").append(getSerfWANPort()).append(",\n")
-            .append("\t\t\"server\": ").append(getServerPort()).append("\n")
-            .append("\t},\n")
-            .append("\t\"disable_update_check\": true\n")
-            .append("}\n")
-            .toString();
+        return "{\n" +
+            "\t\"ports\": {\n" +
+            "\t\t\"serf_lan\": " + getSerfLANPort() + ",\n" +
+            "\t\t\"serf_wan\": " + getSerfWANPort() + ",\n" +
+            "\t\t\"server\": " + getServerPort() + "\n" +
+            "\t},\n" +
+            "\t\"disable_update_check\": true\n" +
+            "}\n";
     }
 
 }

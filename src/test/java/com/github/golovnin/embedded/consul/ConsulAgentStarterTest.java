@@ -33,8 +33,8 @@ package com.github.golovnin.embedded.consul;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.flapdoodle.embed.process.distribution.IVersion;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -98,9 +98,8 @@ public class ConsulAgentStarterTest {
 
     @Test
     public void testCustomVersion() throws IOException {
-        IVersion v0_7_5 = () -> "0.7.5";
         ConsulAgentConfig config = new ConsulAgentConfig.Builder()
-            .version(v0_7_5)
+            .version("0.7.5")
             .logLevel(logLevel)
             .build();
         ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
@@ -112,6 +111,25 @@ public class ConsulAgentStarterTest {
         } finally {
             executable.stop();
         }
+    }
+
+    @Test
+    public void testOutputConsumer() throws IOException {
+        AtomicBoolean b = new AtomicBoolean();
+        ConsulAgentConfig config = new ConsulAgentConfig.Builder()
+            .logLevel(logLevel)
+            .outConsumer(s -> b.set(true))
+            .build();
+        ConsulAgentStarter starter = ConsulAgentStarter.getDefaultInstance();
+        ConsulAgentExecutable executable = starter.prepare(config);
+        try {
+            ConsulAgentProcess process = executable.start();
+            assertTrue(process.isProcessRunning());
+            process.stop();
+        } finally {
+            executable.stop();
+        }
+        assertTrue(b.get());
     }
 
 }
