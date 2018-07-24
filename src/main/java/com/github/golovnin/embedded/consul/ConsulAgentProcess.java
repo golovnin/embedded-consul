@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import de.flapdoodle.embed.process.config.IRuntimeConfig;
 import de.flapdoodle.embed.process.config.io.ProcessOutput;
@@ -65,7 +66,8 @@ public final class ConsulAgentProcess
 
 
     private File configFile;
-
+    private Consumer<String> outConsumer;
+    private Consumer<String> errConsumer;
 
     ConsulAgentProcess(Distribution distribution, ConsulAgentConfig config,
         IRuntimeConfig runtimeConfig, ConsulAgentExecutable executable)
@@ -85,6 +87,10 @@ public final class ConsulAgentProcess
         ) {
             writer.write(config.toJson());
         }
+
+        this.outConsumer = config.getOutConsumer();
+        this.errConsumer = config.getErrConsumer();
+
         String advertise = config.getAdvertise();
         String bind = config.getBind();
         String client = config.getClient();
@@ -127,9 +133,16 @@ public final class ConsulAgentProcess
         LogWatchStreamProcessor logWatch = new LogWatchStreamProcessor(
             SUCCESS_MESSAGE, KNOWN_FAILURE_MESSAGES,
             StreamToLineProcessor.wrap(outputConfig.getOutput()));
-        Processors.connect(process.getReader(), logWatch);
-        Processors.connect(process.getError(),
-            StreamToLineProcessor.wrap(outputConfig.getError()));
+
+        Processors.connect(
+            process.getReader(),
+            new ConsulOutputProcessor(logWatch, outConsumer));
+        Processors.connect(
+            process.getError(),
+            new ConsulOutputProcessor(
+                StreamToLineProcessor.wrap(outputConfig.getError()),
+                errConsumer));
+
         logWatch.waitForResult(getConfig().getStartupTimeout());
         if (logWatch.isInitWithSuccess()) {
             setProcessId(getProcessId());

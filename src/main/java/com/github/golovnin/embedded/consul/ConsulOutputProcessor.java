@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Andrej Golovnin
+ * Copyright (c) 2018, Andrej Golovnin
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,69 +30,34 @@
 
 package com.github.golovnin.embedded.consul;
 
-import de.flapdoodle.embed.process.distribution.IVersion;
+import java.util.function.Consumer;
+
+import de.flapdoodle.embed.process.io.IStreamProcessor;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * @author Andrej Golovnin
+ * @author <a href="mailto:andrej.golovnin@gmail.com">Andrej Golovnin</a>
  */
-public enum ConsulVersion implements IVersion {
+final class ConsulOutputProcessor implements IStreamProcessor {
 
-    @Deprecated
-    V0_8_3("0.8.3"),
+    private final IStreamProcessor delegate;
+    private final Consumer<String> outputProcessor;
 
-    @Deprecated
-    V0_8_4("0.8.4"),
-
-    @Deprecated
-    V0_8_5("0.8.5"),
-
-    @Deprecated
-    V0_9_0("0.9.0"),
-
-    @Deprecated
-    V0_9_2("0.9.2"),
-
-    @Deprecated
-    V0_9_3("0.9.3"),
-
-    @Deprecated
-    V1_0_0("1.0.0"),
-
-    @Deprecated
-    V1_0_1("1.0.1"),
-
-    @Deprecated
-    V1_0_2("1.0.2"),
-
-    @Deprecated
-    V1_0_3("1.0.3"),
-
-    @Deprecated
-    V1_0_5("1.0.5"),
-
-    @Deprecated
-    V1_0_6("1.0.6"),
-
-    @Deprecated
-    V1_0_7("1.0.7"),
-
-    @Deprecated
-    V1_1_0("1.1.0"),
-
-    @Deprecated
-    V1_2_0("1.2.0"),
-
-    V1_2_1("1.2.1");
-
-    private final String version;
-
-    ConsulVersion(String version) {
-        this.version = version;
+    ConsulOutputProcessor(IStreamProcessor delegate, Consumer<String> outputProcessor) {
+        this.delegate = requireNonNull(delegate, "delegate may not be null");
+        this.outputProcessor = requireNonNull(outputProcessor, "outputProcessor may not be null");
     }
 
     @Override
-    public String asInDownloadPath() {
-        return version;
+    public void process(String block) {
+        outputProcessor.accept(block);
+        delegate.process(block);
+    }
+
+    @Override
+    public void onProcessed() {
+        delegate.onProcessed();
     }
 
 }
