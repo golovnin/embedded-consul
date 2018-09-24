@@ -153,7 +153,7 @@ public final class ConsulAgentConfig implements IExecutableProcessConfig {
             TypedProperty.with("err-consumer", Consumer.class);
 
         public Builder() {
-            property(VERSION).setDefault(ConsulVersion.V1_2_1);
+            property(VERSION).setDefault(ConsulVersion.V1_2_3);
             property(STARTUP_TIMEOUT).setDefault(60000L);
             property(ADVERTISE).setDefault(DEFAULT_ADDRESS);
             property(BIND).setDefault(DEFAULT_ADDRESS);

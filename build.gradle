@@ -7,11 +7,11 @@ apply plugin: 'maven-publish'
 apply plugin: 'java-library-distribution'
 
 ext {
-    productVersion    = '1.2.1.0'
+    productVersion    = '1.2.3.0'
     product           = 'embedded-consul'
     javaTarget        = JavaVersion.VERSION_1_8
     libraries         = [
-        flapdoodleProcess:  'de.flapdoodle.embed:de.flapdoodle.embed.process:2.0.1',
+        flapdoodleProcess:  'de.flapdoodle.embed:de.flapdoodle.embed.process:2.0.5',
         junit:              'junit:junit:4.12'
     ]
 }
@@ -30,11 +30,6 @@ idea {
 version = productVersion
 sourceCompatibility = javaTarget
 targetCompatibility = javaTarget
-
-// Change the output directory for the main source set back to the old path.
-// Remove it when IDEA and Eclipse support new layout.
-sourceSets.main.output.classesDir = new File(buildDir, "classes/main")
-sourceSets.test.output.classesDir = new File(buildDir, "classes/test")
 
 repositories {
     mavenCentral()
@@ -120,5 +115,5 @@ bintray {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.8.1'
+    gradleVersion = '4.10.2'
 }

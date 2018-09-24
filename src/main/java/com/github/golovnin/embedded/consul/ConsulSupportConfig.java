@@ -30,6 +30,8 @@
 
 package com.github.golovnin.embedded.consul;
 
+import java.util.concurrent.TimeUnit;
+
 import de.flapdoodle.embed.process.config.ISupportConfig;
 
 /**
@@ -56,6 +58,11 @@ final class ConsulSupportConfig implements ISupportConfig {
     @Override
     public String messageOnException(Class<?> context, Exception exception) {
         return null;
+    }
+
+    @Override
+    public long maxStopTimeoutMillis() {
+        return TimeUnit.SECONDS.toMillis(5);
     }
 
 }
