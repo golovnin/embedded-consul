@@ -65,6 +65,7 @@ public final class ConsulAgentProcess
         Collections.singleton("Error starting agent");
 
 
+    private boolean stopped;
     private File configFile;
     private Consumer<String> outConsumer;
     private Consumer<String> errConsumer;
@@ -168,7 +169,15 @@ public final class ConsulAgentProcess
 
     @Override
     protected void stopInternal() {
-        sendKillToProcess();
+        synchronized (this) {
+            if (!stopped) {
+                stopped = true;
+                if (!sendKillToProcess()) {
+                    tryKillToProcess();
+                }
+                stopProcess();
+            }
+        }
     }
 
     @Override
